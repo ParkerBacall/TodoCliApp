@@ -1,26 +1,44 @@
 class Menu
     def initialize
         @todo_array = Todo.all.map {|todo| todo.name}
+        @category_array = Category.all.map {|todo| todo.name}
     end
 
     def showTodos prompt = TTY::Prompt.new
-        todoName = prompt.select("Parker's Todos" "\n",  @todo_array, "New Todo", "Random Todo", "Quit")
+        todoName = prompt.select("Parker's Todos" "\n", @category_array, "New Todo", "Random Todo", "New Category", "Quit")
         if todoName == "New Todo"
             self.createTodo
         elsif todoName =='Quit'
             exit
         elsif todoName =='Random Todo'
             self.randomTodo
+        elsif todoName =='New Category'
+            self.createCategory
         else
-            showTodo(todoName)
+            showCategoryTodos(todoName)
         end
     end
 
     def createTodo
         puts "what do?"
         todo_name = gets.chomp.capitalize()
-        Todo.create(name: todo_name)
+        Todo.create(name: todo_name, category: Category.all.first)
+        binding.pry
+
         Menu.new.showTodos
+    end
+
+    def createCategory
+        puts "what category?"
+        category_name = gets.chomp.capitalize()
+        Category.create(name: category_name)
+        Menu.new.showTodos
+    end
+
+    def showCategoryTodos todoName, prompt = TTY::Prompt.new
+        category_todos = Category.all.find{|category| category.name == todoName }.todos
+        command = prompt.select("#{todocategory_todosName}" "\n", 'delete', 'update', 'back')
+
     end
     
     def showTodo todoName, prompt = TTY::Prompt.new

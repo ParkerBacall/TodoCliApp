@@ -3,7 +3,9 @@ require 'bundler/setup'
 
   require_all 'lib'
 
-Menu.new.showTodos
 
-  # binding.pry
+  Menu.new.showTodos
+
+  binding.pry
+
   # 0
