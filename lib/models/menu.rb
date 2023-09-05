@@ -1,31 +1,27 @@
 class Menu
     def initialize
         @todo_array = Todo.all.map {|todo| todo.name}
-        @category_array = Category.all.map {|todo| todo.name}
+        @category_array = Category.all.map {|category| category.name}
     end
 
     def showTodos prompt = TTY::Prompt.new
-        todoName = prompt.select("Parker's Todos" "\n", @category_array, "New Todo", "Random Todo", "New Category", "Quit")
-        if todoName == "New Todo"
-            self.createTodo
-        elsif todoName =='Quit'
+        
+        categoryName = prompt.select("Parker's Todos" "\n", @category_array, "New Category", "Quit")
+        if categoryName =='Quit'
             exit
-        elsif todoName =='Random Todo'
-            self.randomTodo
-        elsif todoName =='New Category'
+        elsif categoryName =='New Category'
             self.createCategory
         else
-            showCategoryTodos(todoName)
+            showCategoryTodos(categoryName)
         end
     end
 
-    def createTodo
+    def createTodo categoryName
+        category = Category.all.find{|category| category.name == categoryName }
         puts "what do?"
         todo_name = gets.chomp.capitalize()
-        Todo.create(name: todo_name, category: Category.all.first)
-        binding.pry
-
-        Menu.new.showTodos
+        Todo.create(name: todo_name, category: category)
+        self.showCategoryTodos(categoryName)
     end
 
     def createCategory
@@ -35,44 +31,51 @@ class Menu
         Menu.new.showTodos
     end
 
-    def showCategoryTodos todoName, prompt = TTY::Prompt.new
-        category_todos = Category.all.find{|category| category.name == todoName }.todos
-        command = prompt.select("#{todocategory_todosName}" "\n", 'delete', 'update', 'back')
-
-    end
-    
-    def showTodo todoName, prompt = TTY::Prompt.new
-        todoObj = Todo.all.find{|todo| todo.name == todoName } 
-        id = todoObj.id
-        command = prompt.select("#{todoName}" "\n", 'delete', 'update', 'back')
-
+    def showCategoryTodos categoryName, prompt = TTY::Prompt.new
+        category_todos = Category.all.find{|category| category.name == categoryName }.todos
+        category_todo_names = category_todos.map {|todo| todo.name}
+        command = prompt.select("#{categoryName}" "\n", category_todo_names, 'Add Todo', 'Random Todo', 'back')
         if command == 'back'
             self.showTodos
+        elsif command == 'Random Todo'
+            self.randomTodo(category_todo_names, categoryName)
+        elsif command == 'Add Todo'
+            self.createTodo(categoryName) 
+        else
+            self.showTodo(command, categoryName)
+        end
+    end
+    
+    def showTodo todoName, categoryName, prompt = TTY::Prompt.new
+        todoObj = Todo.all.find{|todo| todo.name == todoName } 
+        command = prompt.select("#{todoName}" "\n", 'delete', 'update', 'back')
+        if command == 'back'
+            self.showCategoryTodos(categoryName)
         elsif command == 'delete'
-            self.deleteTodo(todoObj)
+            self.deleteTodo(todoObj, categoryName)
         elsif command == 'update'
-            self.updateTodo(todoObj)
+            self.updateTodo(todoObj, categoryName)
         end
     end
 
-    def deleteTodo todoObj
-        todoObj.delete
-        Menu.new.showTodos
+    def randomTodo todos, categoryName, prompt = TTY::Prompt.new
+        input = prompt.select("#{todos[rand(todos.length)]}" "\n", "again", "back")
+        if input == 'again'      
+            randomTodo(todos, categoryName)
+        else 
+            self.showCategoryTodos(categoryName)
+        end
     end
 
-    def updateTodo todoObj
+    def deleteTodo todoObj, categoryName
+        todoObj.delete
+        self.showCategoryTodos(categoryName)
+    end
+
+    def updateTodo todoObj, categoryName
         new_todo_name = gets.chomp.capitalize()
         todoObj.update(name: new_todo_name)
-        Menu.new.showTodos
-    end
-
-    def randomTodo prompt = TTY::Prompt.new
-        input = prompt.select(@todo_array[rand(@todo_array.length)], "again", "back")
-        if input == 'again'
-            randomTodo
-        else 
-            self.showTodos
-        end
+        self.showCategoryTodos(categoryName)
     end
 
 end
