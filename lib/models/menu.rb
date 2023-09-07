@@ -6,11 +6,13 @@ class Menu
 
     def showTodos prompt = TTY::Prompt.new
         
-        categoryName = prompt.select("Parker's Todos" "\n", @category_array, "New Category", "Quit")
+        categoryName = prompt.select("Parker's Todos" "\n", @category_array, "New Category", "Random", "Quit")
         if categoryName =='Quit'
             exit
         elsif categoryName =='New Category'
             self.createCategory
+        elsif categoryName =='Random'
+            self.absRandom
         else
             showCategoryTodos(categoryName)
         end
@@ -34,13 +36,18 @@ class Menu
     def showCategoryTodos categoryName, prompt = TTY::Prompt.new
         category_todos = Category.all.find{|category| category.name == categoryName }.todos
         category_todo_names = category_todos.map {|todo| todo.name}
-        command = prompt.select("#{categoryName}" "\n", category_todo_names, 'Add Todo', 'Random Todo', 'back')
+        categoryObj = Category.all.find{|category| category.name == categoryName }
+        command = prompt.select("#{categoryName}" "\n", category_todo_names, 'Add Todo', 'Random Todo', 'Update Category Name', 'Delete Category', 'back')
         if command == 'back'
             self.showTodos
         elsif command == 'Random Todo'
             self.randomTodo(category_todo_names, categoryName)
         elsif command == 'Add Todo'
             self.createTodo(categoryName) 
+        elsif command == 'Update Category Name'
+            self.updateCategory(categoryObj) 
+        elsif command == 'Delete Category'
+            self.deleteCategory(categoryObj, category_todos) 
         else
             self.showTodo(command, categoryName)
         end
@@ -58,6 +65,29 @@ class Menu
         end
     end
 
+    def deleteTodo todoObj, categoryName
+        todoObj.delete
+        self.showCategoryTodos(categoryName)
+    end
+
+    def deleteCategory todoObj, category_todos
+        category_todos.map{|todo| todo.delete}
+        todoObj.delete
+        Menu.new.showTodos
+    end
+
+    def updateCategory categoryObj
+        new_category_name = gets.chomp.capitalize()
+        categoryObj.update(name: new_category_name)
+        Menu.new.showTodos
+    end
+
+    def updateTodo todoObj, categoryName
+        new_todo_name = gets.chomp.capitalize()
+        todoObj.update(name: new_todo_name)
+        self.showCategoryTodos(categoryName)
+    end
+
     def randomTodo todos, categoryName, prompt = TTY::Prompt.new
         input = prompt.select("#{todos[rand(todos.length)]}" "\n", "again", "back")
         if input == 'again'      
@@ -67,15 +97,13 @@ class Menu
         end
     end
 
-    def deleteTodo todoObj, categoryName
-        todoObj.delete
-        self.showCategoryTodos(categoryName)
-    end
-
-    def updateTodo todoObj, categoryName
-        new_todo_name = gets.chomp.capitalize()
-        todoObj.update(name: new_todo_name)
-        self.showCategoryTodos(categoryName)
+    def absRandom prompt = TTY::Prompt.new
+        input = prompt.select("#{ @todo_array[rand( @todo_array.length)]}" "\n", "again", "back")
+        if input == 'again'      
+            absRandom()
+        else 
+            self.showTodos
+        end
     end
 
 end
